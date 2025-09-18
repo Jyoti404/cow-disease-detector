@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.h5
+*.joblib
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+Thumbs.db
+.vscode/
+.idea/

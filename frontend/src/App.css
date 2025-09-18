@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f0f4f8;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background: white;
+  padding: 2rem 3rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+  border-top: 5px solid #4a90e2;
+}
+
+h1 {
+  color: #4a90e2;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.uploader-container {
+  margin-bottom: 1.5rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  background-color: #4a90e2;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+.file-label:hover {
+  background-color: #357abd;
+}
+
+.preview-container {
+  margin-top: 2rem;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 10px;
+  border: 3px solid #e0e0e0;
+}
+
+.predict-button {
+  background-color: #50e3c2;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1.5rem;
+}
+
+.predict-button:hover:not(:disabled) {
+  background-color: #43c4a5;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(80, 227, 194, 0.4);
+}
+
+.predict-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #e74c3c;
+  margin-top: 1rem;
+}
+
+.result-container {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.result-container.lumpy-skin {
+  background-color: #fbeaea;
+  border-left: 5px solid #e74c3c;
+}
+
+.result-container.normal-skin {
+  background-color: #eaf7f2;
+  border-left: 5px solid #50e3c2;
+}
+
+.result-container h2 {
+  margin-top: 0;
+}
+
+.symptom-container {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.symptom-container label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.symptom-container textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.symptom-container textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1rem 0;
+}
+
+.sub-results {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
