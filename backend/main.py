@@ -6,8 +6,8 @@ import numpy as np
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import img_to_array, load_img
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array, load_img
 
 # --- 1. App Setup ---
 app = FastAPI(title="Cow Disease Detection API")
