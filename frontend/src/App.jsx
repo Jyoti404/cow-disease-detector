@@ -43,7 +43,7 @@ function App() {
     formData.append('symptoms', symptoms); // Add symptoms to the form data
 
     try {
-      const response = await axios.post('import.meta.env.VITE_API_BASE_URL', formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/predict`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
