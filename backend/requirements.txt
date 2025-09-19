@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 python-multipart
-tensorflow
+tensorflow-cpu
 scikit-learn
 pandas
 joblib
@@ -9,3 +9,4 @@ numpy
 Pillow
 matplotlib
 gunicorn
+
