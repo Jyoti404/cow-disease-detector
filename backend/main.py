@@ -6,65 +6,67 @@ from tensorflow.keras.preprocessing.image import img_to_array, load_img
 import numpy as np
 import io
 import joblib
+import os
 
 # --- 1. App and Model Setup ---
 app = FastAPI(title="Cow Disease Detection API")
 
+# Configure CORS (Cross-Origin Resource Sharing) to allow the frontend to communicate with this backend.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allows all origins for development
+    allow_origins=["*"],  # Allows all origins for simplicity. For production, you might restrict this.
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all HTTP methods.
+    allow_headers=["*"],  # Allows all headers.
 )
 
-# --- Load Models ---
+# --- 2. Load Models from Local Files ---
+# Render will have these files because they are in your GitHub repository.
+# This code runs once when the application starts up.
 try:
-    # Load the CNN model for image prediction
+    print("Attempting to load models...")
     image_model = load_model('cow_disease_model.h5')
-    print("Image model loaded successfully.")
-    # Load the scikit-learn pipeline for text prediction
     symptom_model = joblib.load('symptom_model.joblib')
-    print("Symptom model loaded successfully.")
+    print("Models loaded successfully from local files.")
 except Exception as e:
-    print(f"Error loading models: {e}")
+    print(f"FATAL: Error loading models: {e}")
+    # If the models can't be loaded, the app is not useful. We set them to None.
     image_model = None
     symptom_model = None
 
-# --- Configuration ---
+# --- 3. Configuration & Constants ---
 CLASS_NAMES = ['LUMPY SKIN', 'NORMAL SKIN']
 IMAGE_WIDTH, IMAGE_HEIGHT = 224, 224
-# Define weights for fusion. We trust the visual evidence from the image slightly more.
+# Weights for combining the two model predictions.
 IMAGE_WEIGHT = 0.60
 TEXT_WEIGHT = 0.40
 
 
-# --- 2. Helper Function for Image Preprocessing ---
-def preprocess_image(image_bytes):
+# --- 4. Helper Function for Image Processing ---
+def preprocess_image(image_bytes: bytes) -> np.ndarray:
     """
-    Preprocesses the uploaded image to the format the model expects.
+    Takes image bytes, preprocesses them for the model, and returns a numpy array.
     """
     try:
-        # Load the image from bytes into a PIL object
         image = load_img(io.BytesIO(image_bytes), target_size=(IMAGE_WIDTH, IMAGE_HEIGHT))
-        # Convert the PIL image to a NumPy array
         image_array = img_to_array(image)
-        # Add a batch dimension (e.g., from (224, 224, 3) to (1, 224, 224, 3))
-        image_array = np.expand_dims(image_array, axis=0)
-        # Rescale the pixel values to the [0, 1] range, as done during training
-        image_array /= 255.0
+        image_array = np.expand_dims(image_array, axis=0)  # Add batch dimension
+        image_array /= 255.0  # Rescale pixel values to [0, 1]
         return image_array
     except Exception as e:
+        # This will catch errors from corrupted or invalid image files.
         raise HTTPException(status_code=400, detail=f"Invalid or corrupted image file: {e}")
 
 
-# --- 3. API Endpoints ---
+# --- 5. API Endpoints ---
+
 @app.get("/")
 def read_root():
     """
-    Root endpoint to welcome users and confirm the API is running.
+    Root endpoint to check if the API is running.
     """
-    return {"message": "Welcome to the Multi-Modal Cow Disease Detection API."}
+    return {"message": "Welcome to the Multi-Modal Cow Disease Detection API, configured for Render."}
+
 
 @app.post("/predict")
 async def predict(
@@ -72,40 +74,30 @@ async def predict(
     symptoms: str = Form(..., description="Text description of the cow's symptoms.")
 ):
     """
-    Receives an image and text symptoms, fuses the predictions, and returns the result.
+    Main prediction endpoint. Receives an image and symptoms, and returns a fused diagnosis.
     """
+    # First, check if the models were loaded correctly on startup.
     if not image_model or not symptom_model:
-        raise HTTPException(status_code=503, detail="One or more models are not loaded or available.")
+        raise HTTPException(status_code=503, detail="Models are not available. Check server logs for errors.")
 
-    # === Image Prediction ===
-    try:
-        image_bytes = await file.read()
-        processed_image = preprocess_image(image_bytes)
-        # Get probabilities for each class from the image model
-        image_prediction_probs = image_model.predict(processed_image)[0]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing the image: {e}")
+    # --- Step 1: Image Prediction ---
+    image_bytes = await file.read()
+    processed_image = preprocess_image(image_bytes)
+    image_prediction_probs = image_model.predict(processed_image)[0]
 
+    # --- Step 2: Text Prediction ---
+    # The model expects a list/array of texts, so we wrap the single symptom string in a list.
+    symptom_prediction_probs = symptom_model.predict_proba([symptoms])[0]
 
-    # === Text Prediction ===
-    try:
-        # The symptom model expects a list of strings for prediction
-        # predict_proba gives probabilities for each class: [P(class_0), P(class_1)]
-        symptom_prediction_probs = symptom_model.predict_proba([symptoms])[0]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing the symptoms: {e}")
-
-
-    # === Fusion Logic ===
-    # Combine the predictions using a weighted average.
-    # The class order [LUMPY SKIN, NORMAL SKIN] must be consistent for both models.
+    # --- Step 3: Fusion Logic ---
+    # Combine the probabilities from both models using the predefined weights.
     fused_probs = (image_prediction_probs * IMAGE_WEIGHT) + (symptom_prediction_probs * TEXT_WEIGHT)
-
+    
     fused_prediction_index = np.argmax(fused_probs)
     fused_prediction_name = CLASS_NAMES[fused_prediction_index]
     fused_confidence = float(fused_probs[fused_prediction_index])
 
-    # Return a detailed response
+    # --- Step 4: Return the detailed response ---
     return {
         "filename": file.filename,
         "image_prediction": CLASS_NAMES[np.argmax(image_prediction_probs)],
@@ -116,8 +108,10 @@ async def predict(
         "fused_confidence": f"{fused_confidence:.2f}"
     }
 
-# --- 4. Run the App ---
-# This block allows you to run the server directly with `python main.py`
+
+# --- 6. Run the App (for local development) ---
+# This part is ignored by Render, which uses the "Start Command" you provide in the dashboard.
+# It's useful for running the app on your own computer.
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 

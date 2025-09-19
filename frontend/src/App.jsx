@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
+// import {dotenv} from 'dotenv';
+// dotenv.config();
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -41,7 +43,7 @@ function App() {
     formData.append('symptoms', symptoms); // Add symptoms to the form data
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/predict', formData, {
+      const response = await axios.post('process.env.REACT_APP_API_BASE', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
