@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 python-multipart
-tflite-runtime
+tensorflow-cpu
 scikit-learn
 pandas
 joblib
