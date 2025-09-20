@@ -27,8 +27,8 @@ app.add_middleware(
 # IMPORTANT: PASTE YOUR GITHUB RELEASE URLS HERE!
 # Use the URL for your original .h5 model, NOT the .tflite one.
 # ==============================================================================
-IMAGE_MODEL_URL = "PASTE_THE_URL_FOR_cow_disease_model.h5_HERE"
-SYMPTOM_MODEL_URL = "PASTE_THE_URL_FOR_symptom_model.joblib_HERE"
+IMAGE_MODEL_URL = "https://github.com/gayatriverm/cow-disease-detector/releases/download/v1.0.0/cow_disease_model.h5"
+SYMPTOM_MODEL_URL = "https://github.com/gayatriverm/cow-disease-detector/releases/download/v1.0.0/symptom_model.joblib"
 # ==============================================================================
 
 IMAGE_MODEL_PATH = "cow_disease_model.h5"
