@@ -7,74 +7,51 @@ import numpy as np
 import io
 import joblib
 import os
-import requests
 
 # --- 1. App Setup ---
-app = FastAPI(title="Cow Disease Detection API")
+app = FastAPI(title="Cow Disease Detection API (Local)")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
 
-
-IMAGE_MODEL_URL = "https://github.com/gayatriverm/cow-disease-detector/releases/download/v1.0.0/cow_disease_model.h5"
-SYMPTOM_MODEL_URL = "https://github.com/gayatriverm/cow-disease-detector/releases/download/v1.0.0/symptom_model.joblib"
-
+# --- 2. Model Loading for Local Environment ---
+# This version loads models directly from your local 'backend' folder.
+# Ensure your model files are in the same directory as this script.
 IMAGE_MODEL_PATH = "cow_disease_model.h5"
 SYMPTOM_MODEL_PATH = "symptom_model.joblib"
 
-# --- 3. Startup Logic with Detailed Logging ---
-def download_file_from_url(url, local_path):
-    if not os.path.exists(local_path):
-        print(f"Downloading {os.path.basename(local_path)}...")
-        try:
-            with requests.get(url, stream=True) as r:
-                r.raise_for_status()
-                with open(local_path, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            print(f"Download successful: {local_path}")
-            return True
-        except requests.exceptions.RequestException as e:
-            print(f"!!!!!!!! FATAL: DOWNLOAD FAILED for {local_path}. Error: {e}")
-            return False
-    else:
-        print(f"{os.path.basename(local_path)} already exists.")
-        return True
+image_model = None
+symptom_model = None
 
-@app.on_event("startup")
-def load_models():
-    """This function runs once when the server starts."""
-    global image_model, symptom_model
-    image_model, symptom_model = None, None
+print("--- Local Server Startup: Loading Models ---")
+# Load Image Model
+if os.path.exists(IMAGE_MODEL_PATH):
+    try:
+        image_model = load_model(IMAGE_MODEL_PATH)
+        print("SUCCESS: Keras image model loaded from local file.")
+    except Exception as e:
+        print(f"!!!!!!!! FATAL: FAILED TO LOAD H5 MODEL. Error: {e}")
+else:
+    print(f"!!!!!!!! FATAL: Image model file not found at '{IMAGE_MODEL_PATH}'")
 
-    print("--- Server Startup: Loading Models ---")
-    # Step 1: Download files
-    image_download_ok = download_file_from_url(IMAGE_MODEL_URL, IMAGE_MODEL_PATH)
-    symptom_download_ok = download_file_from_url(SYMPTOM_MODEL_URL, SYMPTOM_MODEL_PATH)
+# Load Symptom Model
+if os.path.exists(SYMPTOM_MODEL_PATH):
+    try:
+        symptom_model = joblib.load(SYMPTOM_MODEL_PATH)
+        print("SUCCESS: Joblib symptom model loaded from local file.")
+    except Exception as e:
+        print(f"!!!!!!!! FATAL: FAILED TO LOAD JOBLIB MODEL. Error: {e}")
+else:
+    print(f"!!!!!!!! FATAL: Symptom model file not found at '{SYMPTOM_MODEL_PATH}'")
 
-    # Step 2: Load Image Model
-    if image_download_ok:
-        try:
-            image_model = load_model(IMAGE_MODEL_PATH)
-            print("SUCCESS: Keras image model loaded.")
-        except Exception as e:
-            print(f"!!!!!!!! FATAL: FAILED TO LOAD H5 MODEL. Error: {e}")
-    
-    # Step 3: Load Symptom Model
-    if symptom_download_ok:
-        try:
-            symptom_model = joblib.load(SYMPTOM_MODEL_PATH)
-            print("SUCCESS: Joblib symptom model loaded.")
-        except Exception as e:
-            print(f"!!!!!!!! FATAL: FAILED TO LOAD JOBLIB MODEL. Error: {e}")
+if image_model and symptom_model:
+    print("--- All models loaded successfully. Server is ready. ---")
+else:
+    print("--- One or more models failed to load. Server will report errors. ---")
 
-    if image_model and symptom_model:
-        print("--- All models loaded successfully. Server is ready. ---")
-    else:
-        print("--- One or more models failed to load. Server is NOT ready. ---")
 
-# --- 4. The Rest of the App (No changes needed here) ---
+# --- 3. The Rest of the App (No changes needed here) ---
 CLASS_NAMES = ['LUMPY SKIN', 'NORMAL SKIN']
 IMAGE_WIDTH, IMAGE_HEIGHT = 224, 224
 IMAGE_WEIGHT, TEXT_WEIGHT = 0.60, 0.40
@@ -91,7 +68,7 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Cow Disease Detection API."}
+    return {"message": "Welcome to the Cow Disease Detection API (Local Version)."}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), symptoms: str = Form(...)):
@@ -116,4 +93,9 @@ async def predict(file: UploadFile = File(...), symptoms: str = Form(...)):
         "fused_prediction": fused_prediction_name,
         "fused_confidence": f"{fused_confidence:.2f}",
     }
+
+# --- 4. Running the Server Locally ---
+# This block allows you to run the server directly with `python main.py`
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
